@@ -42,6 +42,7 @@ class MainActivity : ComponentActivity() {
 
     private val page01Vm: Page01ViewModel by viewModels()
     private val page02Vm: Page02ViewModel by viewModels()
+    private val page03Vm: Page03ViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -50,7 +51,8 @@ class MainActivity : ComponentActivity() {
             HiltDiTestTheme {
                 MainScreenPage(
                     page01Vm,
-                    page02Vm
+                    page02Vm,
+                    page03Vm
                 )
             }
         }
@@ -60,20 +62,25 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MainScreenPage(
     page01Vm: Page01ViewModel,
-    page02Vm: Page02ViewModel
+    page02Vm: Page02ViewModel,
+    page03Vm: Page03ViewModel
 ) {
     val page01Count by page01Vm.data.collectAsStateWithLifecycle()
 
-    val page02User by page02Vm.user.collectAsStateWithLifecycle()
-    val page02Product by page02Vm.product.collectAsStateWithLifecycle()
+    val page02Count by page02Vm.data.collectAsStateWithLifecycle()
+
+    val page03User by page03Vm.user.collectAsStateWithLifecycle()
+    val page03Product by page03Vm.product.collectAsStateWithLifecycle()
 
     MainScreen(
         page01Count = page01Count,
         page01OnIncrement = { page01Vm.increment() },
-        page02UserName = page02User,
-        page02ProName = page02Product,
-        page02OnFetchData = { page02Vm.fetchData() },
-        page02OnLogHash = { page02Vm.logHashes() },
+        page02Count = page02Count,
+        page02OnIncrement = { page02Vm.increment() },
+        page03UserName = page03User,
+        page03ProName = page03Product,
+        page03OnFetchData = { page03Vm.fetchData() },
+        page03OnLogHash = { page03Vm.logHashes() },
     )
 }
 
@@ -82,12 +89,14 @@ fun MainScreenPage(
 fun MainScreen(
     page01Count: Int,
     page01OnIncrement: () -> Unit,
-    page02UserName: String,
-    page02ProName: String,
-    page02OnFetchData: () -> Unit,
-    page02OnLogHash: () -> Unit,
+    page02Count: Int,
+    page02OnIncrement: () -> Unit,
+    page03UserName: String,
+    page03ProName: String,
+    page03OnFetchData: () -> Unit,
+    page03OnLogHash: () -> Unit,
 ) {
-    val drawerItems = listOf("Page01", "Page02", "Page03")
+    val drawerItems = listOf("Page01", "Page02", "Page03", "Page04")
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -136,10 +145,12 @@ fun MainScreen(
                 selectedPage = selectedPage,
                 page01Count = page01Count,
                 page01OnIncrement = page01OnIncrement,
-                page02UserName = page02UserName,
-                page02ProName = page02ProName,
-                page02OnFetchData = page02OnFetchData,
-                page02OnLogHash = page02OnLogHash,
+                page02Count = page02Count,
+                page02OnIncrement = page02OnIncrement,
+                page03UserName = page03UserName,
+                page03ProName = page03ProName,
+                page03OnFetchData = page03OnFetchData,
+                page03OnLogHash = page03OnLogHash,
                 modifier = Modifier.padding(padding)
             )
         }
@@ -151,10 +162,12 @@ fun ScreenContainer(
     selectedPage: Int,
     page01Count: Int,
     page01OnIncrement: () -> Unit,
-    page02UserName: String,
-    page02ProName: String,
-    page02OnFetchData: () -> Unit,
-    page02OnLogHash: () -> Unit,
+    page02Count: Int,
+    page02OnIncrement: () -> Unit,
+    page03UserName: String,
+    page03ProName: String,
+    page03OnFetchData: () -> Unit,
+    page03OnLogHash: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box(modifier = modifier.fillMaxSize()) {
@@ -165,13 +178,18 @@ fun ScreenContainer(
             )
 
             1 -> Page02Screen(
-                userName = page02UserName,
-                productName = page02ProName,
-                onFetchData = page02OnFetchData,
-                onLogHash = page02OnLogHash
+                count = page02Count,
+                onIncrement = page02OnIncrement
             )
 
-            2 -> Page03Page()
+            2 -> Page03Screen(
+                userName = page03UserName,
+                productName = page03ProName,
+                onFetchData = page03OnFetchData,
+                onLogHash = page03OnLogHash
+            )
+
+            3 -> Page04Page()
         }
     }
 }
@@ -182,9 +200,11 @@ fun MainScreenPreview() {
     MainScreen(
         page01Count = 10,
         page01OnIncrement = {},
-        page02UserName = "Peter",
-        page02ProName = "Water Ball",
-        page02OnFetchData = {},
-        page02OnLogHash = {}
+        page02Count = 10,
+        page02OnIncrement = {},
+        page03UserName = "Peter",
+        page03ProName = "Water Ball",
+        page03OnFetchData = {},
+        page03OnLogHash = {}
     )
 }
