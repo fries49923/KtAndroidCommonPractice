@@ -1,68 +1,67 @@
 package com.example.hiltditest
 
 import android.util.Log
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import javax.inject.Inject
+import javax.inject.Singleton
+
+// 測試 DI 搭配 Repository Pattern 架構，並驗證注入 Singleton 的物件 (hash code)
 
 // <editor-fold desc="--- View ---">
 
-// 測試直接從 Compose 中取得 ViewModel
-// 配合此範例的 ModalNavigationDrawer 在切換頁面時，並不會觸發到 viewModel 的 onCleared()
-// 不過會造成 MainScreenPreview 切到 page03 時會卡住
-@Composable
-fun Page03Page(
-    page03Vm: Page03ViewModel = hiltViewModel<Page03ViewModel>()
-) {
-    val msg = page03Vm.message.collectAsStateWithLifecycle()
-
-    Page03Screen(
-        msg = msg.value, onFresh = { page03Vm.freshMessage() })
-}
-
 @Composable
 fun Page03Screen(
-    msg: String, onFresh: () -> Unit
+    userName: String,
+    productName: String,
+    onFetchData: () -> Unit,
+    onLogHash: () -> Unit
 ) {
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        val textFontSize = 24.sp
+
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
             Text(
-                text = "Msg: $msg",
-                fontSize = 24.sp,
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Center
+                text = "User: $userName",
+                fontSize = textFontSize
             )
-            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "Product: $productName",
+                fontSize = textFontSize
+            )
             Button(
-                onClick = { onFresh() }) {
-                Text(text = "Fresh")
+                onClick = { onFetchData() }
+            ) {
+                Text(text = "Fetch Data")
+            }
+            Button(
+                onClick = { onLogHash() }
+            ) {
+                Text(text = "Log Hash")
             }
         }
     }
@@ -72,7 +71,11 @@ fun Page03Screen(
 @Composable
 fun Page03ScreenPreview() {
     Page03Screen(
-        msg = "This is message", onFresh = {})
+        userName = "Peter",
+        productName = "Water Ball",
+        onFetchData = {},
+        onLogHash = {}
+    )
 }
 
 // </editor-fold>
@@ -81,25 +84,24 @@ fun Page03ScreenPreview() {
 
 @HiltViewModel
 class Page03ViewModel @Inject constructor(
-    private val service: MessageProvider
+    private val userService: UserService,
+    private val productService: ProductService
 ) : ViewModel() {
 
-    private val _message = MutableStateFlow("Loading...")
-    val message: StateFlow<String> = _message.asStateFlow()
+    private val _user = MutableStateFlow("")
+    val user = _user.asStateFlow()
 
-    init {
-        Log.i("TestRun", "Page03ViewModel init, hashCode=${this.hashCode()}")
-        Log.i("TestRun", "Injected MessageProvider hashCode=${service.hashCode()}")
-        freshMessage()
+    private val _product = MutableStateFlow("")
+    val product = _product.asStateFlow()
+
+    fun fetchData() {
+        _user.value = userService.fetchUserInfo()
+        _product.value = productService.fetchProductInfo()
     }
 
-    fun freshMessage() {
-        _message.value = service.fetchMessage()
-    }
-
-    override fun onCleared() {
-        Log.i("TestRun", "Page03ViewModel onCleared")
-        super.onCleared()
+    fun logHashes() {
+        userService.logRepoHash()
+        productService.logRepoHash()
     }
 }
 
@@ -111,28 +113,88 @@ class Page03ViewModel @Inject constructor(
 @InstallIn(SingletonComponent::class)
 abstract class Page03Module {
 
+    // Service
     @Binds
-    abstract fun bindPage03Service(
-        impl: MessageProviderImpl
-    ): MessageProvider
+    abstract fun bindUserService(
+        impl: UserServiceImpl
+    ): UserService
+
+    @Binds
+    abstract fun bindProductService(
+        impl: ProductServiceImpl
+    ): ProductService
+
+    // Repo
+    @Binds
+    abstract fun bindUserRepository(
+        impl: RealRepositoryImpl
+    ): UserRepository
+
+    @Binds
+    abstract fun bindProductRepository(
+        impl: RealRepositoryImpl
+    ): ProductRepository
 }
 
 // </editor-fold>
 
 // <editor-fold desc="--- Service ---">
 
-interface MessageProvider {
-    fun fetchMessage(): String
+interface UserService {
+    fun fetchUserInfo(): String
+    fun logRepoHash()
 }
 
-//@Singleton
-class MessageProviderImpl @Inject constructor() : MessageProvider {
-    private val messages = listOf(
-        "Hello from Page03!", "Welcome to Page03!", "This is a message from Page03."
-    )
+interface ProductService {
+    fun fetchProductInfo(): String
+    fun logRepoHash()
+}
 
-    override fun fetchMessage(): String {
-        return messages.random()
+class UserServiceImpl @Inject constructor(
+    private val userRepo: UserRepository
+) : UserService {
+    override fun fetchUserInfo(): String = userRepo.getUserName()
+
+    override fun logRepoHash() {
+        Log.i("TestRun", "UserRepository hash: ${userRepo.hashCode()}")
+    }
+}
+
+class ProductServiceImpl @Inject constructor(
+    private val productRepo: ProductRepository
+) : ProductService {
+    override fun fetchProductInfo(): String = productRepo.getProductName()
+
+    override fun logRepoHash() {
+        Log.i("TestRun", "ProductRepository hash: ${productRepo.hashCode()}")
+    }
+}
+
+// </editor-fold>
+
+// <editor-fold desc="--- Repo ---">
+
+interface UserRepository {
+    fun getUserName(): String
+}
+
+interface ProductRepository {
+    fun getProductName(): String
+}
+
+// 若未加 @Singleton 此範例 DI 會 new 兩實體
+@Singleton
+class RealRepositoryImpl @Inject constructor() : UserRepository, ProductRepository {
+
+    private val userNames = listOf("Alice", "Bob", "Charlie", "Diana")
+    private val productNames = listOf("Coffee Mug", "Laptop", "Notebook", "Water Bottle")
+
+    override fun getUserName(): String {
+        return userNames.random()
+    }
+
+    override fun getProductName(): String {
+        return productNames.random()
     }
 }
 
