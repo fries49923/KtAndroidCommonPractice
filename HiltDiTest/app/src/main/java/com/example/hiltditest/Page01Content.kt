@@ -14,8 +14,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
-import dagger.Binds
 import dagger.Module
+import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.components.SingletonComponent
@@ -24,6 +24,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import javax.inject.Inject
 import javax.inject.Singleton
+
+// 測試基礎 DI，注入固定物件到 ViewModel 中
 
 @Composable
 fun Page01Screen(
@@ -57,7 +59,7 @@ fun Page01ScreenPreview() {
 
 @HiltViewModel
 class Page01ViewModel @Inject constructor(
-    private val processor: IntProcessor
+    private val processor: SimpleProcessor
 ) : ViewModel() {
 
     private val _data = MutableStateFlow(0)
@@ -70,24 +72,14 @@ class Page01ViewModel @Inject constructor(
 
 @Module
 @InstallIn(SingletonComponent::class)
-abstract class ProcessorModule {
-    @Binds
-    abstract fun bindIntProcessor(
-        //impl: AddOneProcessor
-        impl: AddTwoProcessor
-    ): IntProcessor
-}
+object SimpleProcessorModule {
 
-interface IntProcessor {
-    fun process(value: Int): Int
+    @Provides
+    @Singleton
+    fun provideSimpleProcessor(): SimpleProcessor = SimpleProcessor()
 }
 
 @Singleton
-class AddOneProcessor @Inject constructor() : IntProcessor {
-    override fun process(value: Int): Int = value + 1
-}
-
-@Singleton
-class AddTwoProcessor @Inject constructor() : IntProcessor {
-    override fun process(value: Int): Int = value + 2
+class SimpleProcessor @Inject constructor() {
+    fun process(value: Int): Int = value + 10
 }
