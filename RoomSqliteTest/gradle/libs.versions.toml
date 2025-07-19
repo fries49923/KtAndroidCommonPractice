@@ -14,7 +14,6 @@ robolectric = "4.12"
 roomRuntime = "2.6.1"
 rxandroid = "3.0.2"
 rxkotlin = "3.0.1"
-roomRuntimeJvm = "2.7.2"
 coreKtxVersion = "1.6.1"
 
 [libraries]
