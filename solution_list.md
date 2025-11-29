@@ -25,11 +25,27 @@ MMKV 是高效的記憶體映射式 Key-Value 儲存庫，支援快速存取本�
 
 <br>
 
+## [ProductFlavorTest](./ProductFlavorTest)
+
+#ProductFlavor #BuildVariant #BuildConfig
+
+測試在 Android 專案中使用 ProductFlavor，並在不同自訂環境 (dev / prod) 下套用不同設定，例如 ApplicationId、API URL (字串) 或版本名稱的 Suffix。 同時在 src 下建立對應環境的資料夾，並簡單定義各環境下的 app name
+
+<br>
+
 ## [RoomSqliteTest](./RoomSqliteTest)
 
 #Room #SQLite
 
 在 Android App 中測試使用 Room (SQLite)，建立兩張資料表並設定外鍵關係；資料存取透過同步與非同步（Rx）實作，部分方法於單元測試（unitTest）中簡單驗證
+
+<br>
+
+## [SignedConfigTest](./SignedConfigTest)
+
+#signingConfigs #keystore
+
+示範透過 signingConfigs 設定簽署資訊，並將相關密碼集中管理於 keystore.properties 檔案中，也包含建立 keystore 的步驟圖
 
 <br>
 
